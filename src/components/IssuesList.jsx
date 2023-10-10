@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { IssueItem } from "./IssueItem";
+import React from "react";
 
 export default function IssuesList({ labels, status }) {
   const issuesQuery = useQuery(["issues", { labels, status }], () => {
@@ -10,27 +11,85 @@ export default function IssuesList({ labels, status }) {
     );
   });
 
+  const [searchValue, setSearchValue] = React.useState("");
+
+  const searchQuery = useQuery(
+    ["issues", "search", searchValue],
+    () =>
+      fetch(`/api/search/issues?q=${searchValue}`).then((res) => res.json()),
+    { enabled: searchValue.length > 0 }
+  );
+
   return (
     <div>
-      <h2>Issues List</h2>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          setSearchValue(event.target.search.value);
+        }}
+      >
+        <label htmlFor="search">Search Issues</label>
+        <input
+          type="search"
+          placeholder="Search"
+          name="search"
+          id="search"
+          onChange={(event) => {
+            if (event.target.value.length === 0) {
+              setSearchValue("");
+            }
+          }}
+        />
+      </form>
+
       {issuesQuery.isLoading ? (
         <p>Loading... </p>
+      ) : searchQuery.fetchStatus === "idle" && searchQuery.isLoading ? (
+        <>
+          <h2>Issues List</h2>
+          <ul className="issues-list">
+            {issuesQuery.data.map((issue) => (
+              <IssueItem
+                key={issue.id}
+                title={issue.title}
+                number={issue.number}
+                assignee={issue.assignee}
+                commentCount={issue.comments.length}
+                createdBy={issue.createdBy}
+                createdDate={issue.createdDate}
+                labels={issue.labels}
+                status={issue.status}
+              />
+            ))}
+          </ul>
+        </>
       ) : (
-        <ul className="issues-list">
-          {issuesQuery.data.map((issue) => (
-            <IssueItem
-              key={issue.id}
-              title={issue.title}
-              number={issue.number}
-              assignee={issue.assignee}
-              commentCount={issue.comments.length}
-              createdBy={issue.createdBy}
-              createdDate={issue.createdDate}
-              labels={issue.labels}
-              status={issue.status}
-            />
-          ))}
-        </ul>
+        <>
+          <h2>Search Results</h2>
+
+          {searchQuery.isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              <p>{searchQuery.data.count} Results</p>
+              <ul className="issues-list">
+                {searchQuery.data.items.map((issue) => (
+                  <IssueItem
+                    key={issue.id}
+                    title={issue.title}
+                    number={issue.number}
+                    assignee={issue.assignee}
+                    commentCount={issue.comments.length}
+                    createdBy={issue.createdBy}
+                    createdDate={issue.createdDate}
+                    labels={issue.labels}
+                    status={issue.status}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
+        </>
       )}
     </div>
   );
