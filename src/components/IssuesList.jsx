@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { IssueItem } from "./IssueItem";
 import React from "react";
 import fetchWithError from "../helpers/fetchWithError";
+import Loader from "./Loader";
 
 export default function IssuesList({ labels, status }) {
   const issuesQuery = useQuery(["issues", { labels, status }], ({ signal }) => {
@@ -52,7 +53,7 @@ export default function IssuesList({ labels, status }) {
         <p>{issuesQuery.error.message}</p>
       ) : searchQuery.fetchStatus === "idle" && searchQuery.isLoading ? (
         <>
-          <h2>Issues List</h2>
+          <h2>Issues List {issuesQuery.isFetching ? <Loader /> : null}</h2>
           <ul className="issues-list">
             {issuesQuery.data.map((issue) => (
               <IssueItem
