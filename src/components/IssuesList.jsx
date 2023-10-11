@@ -15,7 +15,6 @@ export default function IssuesList({ labels, status }) {
         `/api/issues?${labelsString}${statusString}`,
         {
           signal,
-          headers: { "x-error": true },
         }
       );
 
